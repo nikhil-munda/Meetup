@@ -1,0 +1,59 @@
+.App {
+  text-align: center;
+}
+.landingPageContainer{
+  width: 100vw;
+  height: 100vh;
+  background: url("/public/background.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: white;
+}
+.landingPageContainer nav{
+  padding-inline: 1.2rem;
+  padding-block: 1.6rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.landingPageContainer nav h2{
+  font-size: 1.8rem;
+  font-weight: 500;
+
+}
+
+.landingPageContainer nav .nav-list{
+  display: flex;
+  gap: 1.6rem;
+  cursor: pointer;
+}
+.landingMainContainer{
+  display: flex;
+  justify-content: space-between;
+  padding-inline: 3rem;
+  height: 80vh;
+  align-items: center;
+}
+.landingMainContainer > div:nth-child(1){
+  font-size: 2.2rem;
+
+}
+.landingMainContainer > div:nth-child(1) div[role='button']{
+  background-color: orange;
+  width: fit-content;
+  margin-top: 1.6rem;
+  padding: 0.5rem;
+  text-decoration: none;
+  border-radius: 0.8rem;
+}
+
+.landingMainContainer > div:nth-child(1) div[role='button'] a{
+  text-decoration: none;
+  color: rgb(255, 255, 255);
+  font-weight: 700;
+}
+
+.landingMainContainer > div:nth-child(2) img{
+  height: 80vh;
+  width: auto;
+}
