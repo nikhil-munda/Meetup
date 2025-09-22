@@ -1,0 +1,53 @@
+.video-grid {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.video-chat-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.video-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+    justify-content: center;
+}
+
+.local-video, .remote-video {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.local-video h3, .remote-video h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+video {
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.lobby {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 20px;
+}
+
+.main {
+    height: 100vh;
+    width: 100vw;
+}

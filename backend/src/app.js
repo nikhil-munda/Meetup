@@ -11,6 +11,7 @@ import userRoutes from "./routes/users.routes.js";
 const app= express();
 const server= createServer(app);
 const io= connectToSocket(server);
+console.log("Socket.IO server initialized");
 
 app.set("port", (process.env.PORT || 8000))
 app.set("mongo_username", (process.env.PORT))
