@@ -17,8 +17,9 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import PeopleIcon from '@mui/icons-material/People';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import '../style/VideoComponent.css';
+import server from '../environment.js';
 
-const serverURL = "http://localhost:8000";
+const serverURL = server;
 
 var connections = {}
 
