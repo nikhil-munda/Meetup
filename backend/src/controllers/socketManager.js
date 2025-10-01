@@ -3,6 +3,7 @@ import { Server } from "socket.io"
 let connections = {}
 let messages = {}
 let timeOnline = {}
+let raisedHands = {} // Track raised hands per room
 
 const connectToSocket = (server) => {
     const io = new Server(server, {
@@ -18,39 +19,51 @@ const connectToSocket = (server) => {
         console.log("Client connected - Socket ID:", socket.id);
 
         socket.on("join-call", (path) => {
-            console.log(`${socket.id} wants to join path: ${path}`);
+            console.log(`${socket.id} wants to join room: ${path}`);
             
             if (connections[path] === undefined) {
                 connections[path] = [];
+            }
+            if (raisedHands[path] === undefined) {
+                raisedHands[path] = [];
             }
             
             connections[path].push(socket.id);
             timeOnline[socket.id] = new Date();
 
-            console.log(`Current connections for ${path}:`, connections[path]);
+            console.log(`Room ${path} now has users:`, connections[path]);
 
-            // Send user-joined event to ALL users in the room (including the new one)
-            for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path]);
+            connections[path].forEach(clientId => {
+                io.to(clientId).emit("user-joined", socket.id, connections[path]);
+            });
+
+            // Send existing chat messages to new user
+            if (messages[path] !== undefined) {
+                messages[path].forEach(msg => {
+                    io.to(socket.id).emit("chat-message", 
+                        msg['data'], 
+                        msg['sender'], 
+                        msg['socket-id-sender']
+                    );
+                });
             }
 
-            if (messages[path] !== undefined) {
-                for (let a = 0; a < messages[path].length; a++) {
-                    io.to(socket.id).emit("chat-message", 
-                        messages[path][a]['data'], 
-                        messages[path][a]['sender'], 
-                        messages[path][a]['socket-id-sender']
-                    );
-                }
+            // Send existing raised hands to new user
+            if (raisedHands[path] !== undefined) {
+                raisedHands[path].forEach(hand => {
+                    io.to(socket.id).emit("hand-raised", hand.socketId, hand.username);
+                });
             }
         });
 
         socket.on("signal", (toId, message) => {
-            console.log(`Signal from ${socket.id} to ${toId}: ${message.substring(0, 100)}...`);
+            console.log(`Signal from ${socket.id} to ${toId}`);
             io.to(toId).emit("signal", socket.id, message);
         });
 
         socket.on("chat-message", (data, sender) => {
+            console.log(`Chat message from ${socket.id} (${sender}): ${data}`);
+            
             const [matchingRoom, found] = Object.entries(connections)
                 .reduce(([room, isFound], [roomKey, roomValue]) => {
                     if (!isFound && roomValue.includes(socket.id)) {
@@ -70,10 +83,59 @@ const connectToSocket = (server) => {
                     'socket-id-sender': socket.id
                 });
                 
-                console.log("message", matchingRoom, ":", sender, data);
+                console.log("Broadcasting message to room", matchingRoom);
 
-                connections[matchingRoom].forEach((elem) => {
-                    io.to(elem).emit("chat-message", data, sender, socket.id);
+                connections[matchingRoom].forEach((clientId) => {
+                    io.to(clientId).emit("chat-message", data, sender, socket.id);
+                });
+            }
+        });
+
+        // Hand raise handlers
+        socket.on("raise-hand", (username) => {
+            console.log(`${username} (${socket.id}) raised their hand`);
+            
+            const [matchingRoom, found] = Object.entries(connections)
+                .reduce(([room, isFound], [roomKey, roomValue]) => {
+                    if (!isFound && roomValue.includes(socket.id)) {
+                        return [roomKey, true];
+                    }
+                    return [room, isFound];
+                }, ["", false]);
+
+            if (found === true) {
+                // Add to raised hands if not already there
+                if (!raisedHands[matchingRoom].find(hand => hand.socketId === socket.id)) {
+                    raisedHands[matchingRoom].push({ socketId: socket.id, username });
+                }
+
+                // Notify all users in the room
+                connections[matchingRoom].forEach((clientId) => {
+                    io.to(clientId).emit("hand-raised", socket.id, username);
+                });
+            }
+        });
+
+        socket.on("lower-hand", (username) => {
+            console.log(`${username} (${socket.id}) lowered their hand`);
+            
+            const [matchingRoom, found] = Object.entries(connections)
+                .reduce(([room, isFound], [roomKey, roomValue]) => {
+                    if (!isFound && roomValue.includes(socket.id)) {
+                        return [roomKey, true];
+                    }
+                    return [room, isFound];
+                }, ["", false]);
+
+            if (found === true) {
+                // Remove from raised hands
+                raisedHands[matchingRoom] = raisedHands[matchingRoom].filter(
+                    hand => hand.socketId !== socket.id
+                );
+
+                // Notify all users in the room
+                connections[matchingRoom].forEach((clientId) => {
+                    io.to(clientId).emit("hand-lowered", socket.id, username);
                 });
             }
         });
@@ -81,29 +143,32 @@ const connectToSocket = (server) => {
         socket.on("disconnect", () => {
             console.log("User disconnected:", socket.id);
             
-            var diffTime = Math.abs(timeOnline[socket.id] - new Date());
-            var key;
-
-            for (const [k, v] of Object.entries(connections)) {
-                for (let a = 0; a < v.length; a++) {
-                    if (v[a] === socket.id) {
-                        key = k;
-
-                        // Notify other users in the room
-                        for (let b = 0; b < connections[key].length; b++) {
-                            if (connections[key][b] !== socket.id) {
-                                io.to(connections[key][b]).emit("user-left", socket.id);
-                            }
+            for (const [roomKey, roomUsers] of Object.entries(connections)) {
+                const userIndex = roomUsers.indexOf(socket.id);
+                if (userIndex !== -1) {
+                    roomUsers.forEach(clientId => {
+                        if (clientId !== socket.id) {
+                            io.to(clientId).emit("user-left", socket.id);
                         }
+                    });
 
-                        var index = connections[key].indexOf(socket.id);
-                        connections[key].splice(index, 1);
+                    roomUsers.splice(userIndex, 1);
 
-                        if (connections[key].length === 0) {
-                            delete connections[key];
-                        }
-                        break;
+                    // Remove from raised hands
+                    if (raisedHands[roomKey]) {
+                        raisedHands[roomKey] = raisedHands[roomKey].filter(
+                            hand => hand.socketId !== socket.id
+                        );
                     }
+
+                    if (roomUsers.length === 0) {
+                        delete connections[roomKey];
+                        delete messages[roomKey];
+                        delete raisedHands[roomKey];
+                    }
+
+                    console.log(`Removed ${socket.id} from room ${roomKey}`);
+                    break;
                 }
             }
 

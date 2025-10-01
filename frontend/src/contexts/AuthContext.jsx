@@ -1,7 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import httpStatus from 'http-status';
 
 export const AuthContext = createContext();
 
@@ -14,7 +13,7 @@ export const AuthProvider = ({ children}) =>{
 
     const[userData, setUserData] = useState(authContext);
 
-    const Router= useNavigate();
+    const router = useNavigate();
 
     const handleRegister = async(name,username,password)=>{
         try{
@@ -24,7 +23,9 @@ export const AuthProvider = ({ children}) =>{
                 password: password
             })
 
-            if(request.status === httpStatus.CREATED){
+            if(request.status === 201){
+                setUserData({ name, username });
+                router("/home");
                 return request.data.message;
             }
         }catch(error){
@@ -39,17 +40,16 @@ export const AuthProvider = ({ children}) =>{
                 password: password
             })
 
-            if(request.status === httpStatus.OK){
+            if(request.status === 200){
                 localStorage.setItem("token", request.data.token);
-
-
+                setUserData({ username, token: request.data.token });
+                router("/home");
+                return request.data.message;
             }
         }catch(err){
             throw err;
         }
     }
-
-    const router= useNavigate();
 
     const data= {
         userData,setUserData,handleRegister,handleLogin

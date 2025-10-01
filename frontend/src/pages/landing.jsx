@@ -11,10 +11,16 @@ export default function LandingPage() {
                 <h2>Video Calling</h2>
                 </div>
             <div className='nav-list'>
-                <p>Join as Guest</p>
-                <p>Register</p>
+                <Link to="/home" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <p>Join as Guest</p>
+                </Link>
+                <Link to="/auth" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <p>Register</p>
+                </Link>
                 <div role='button'>
-                    <p>Login</p>
+                    <Link to="/auth" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <p>Login</p>
+                    </Link>
                 </div>
             </div>
         </nav>
@@ -22,7 +28,7 @@ export default function LandingPage() {
         <div><h1><span style={{ color: "orange" }}>Connect</span> Loved Ones</h1>
         <p>Cover your distance by video call</p>
         <div role='button'>
-            <Link to={"/auth"}>Start Call</Link>
+            <Link to={"/home"} style={{ textDecoration: 'none', color: 'inherit' }}>Start Call</Link>
         </div>
         </div>
         <div>
